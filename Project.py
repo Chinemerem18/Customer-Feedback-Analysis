@@ -34,54 +34,54 @@ def clean_text(text):
 df['Cleaned_Text'] = df['Text'].apply(clean_text)
 
 
-# # Sentiment Label (from rating)
+# Sentiment Label (from rating)
 
-# def map_sentiment(score):
-#     if score >= 4:
-#         return 'Positive'
-#     elif score == 3:
-#         return 'Neutral'
-#     else:
-#         return 'Negative'
+def map_sentiment(score):
+    if score >= 4:
+        return 'Positive'
+    elif score == 3:
+        return 'Neutral'
+    else:
+        return 'Negative'
 
-# df['Sentiment_Label'] = df['Score'].apply(map_sentiment)
-
-
-# # TF-IDF for Cleaned Reviews
-
-# tfidf = TfidfVectorizer(max_features=8000, ngram_range=(1, 2))
-# X_text = tfidf.fit_transform(df['Cleaned_Text'])
-
-# # Sentiment Encoding
-# sent_le = LabelEncoder()
-# sent_encoded = sent_le.fit_transform(df['Sentiment_Label']).reshape(-1, 1)
-
-# # Combine text TF-IDF + sentiment for rating model
-# from scipy.sparse import hstack
-# X_rating = hstack([X_text, sent_encoded])
+df['Sentiment_Label'] = df['Score'].apply(map_sentiment)
 
 
-# # Rating Prediction
+# TF-IDF for Cleaned Reviews
 
-# y_rating = df['Score'] - 1  # Classes: 0–4
-# X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(X_rating, y_rating, test_size=0.2, random_state=42)
+tfidf = TfidfVectorizer(max_features=8000, ngram_range=(1, 2))
+X_text = tfidf.fit_transform(df['Cleaned_Text'])
 
-# rating_clf = RandomForestClassifier(n_estimators=200, max_depth=25, class_weight='balanced', random_state=42)
-# rating_clf.fit(X_train_r, y_train_r)
-# y_pred_rating = rating_clf.predict(X_test_r)
-# print("\n📊 Improved Rating Classifier (with Sentiment)")
-# print("Accuracy:", accuracy_score(y_test_r, y_pred_rating))
-# print(classification_report(y_test_r, y_pred_rating))
+# Sentiment Encoding
+sent_le = LabelEncoder()
+sent_encoded = sent_le.fit_transform(df['Sentiment_Label']).reshape(-1, 1)
 
-# # Sentiment Prediction (Supervised)
+# Combine text TF-IDF + sentiment for rating model
+from scipy.sparse import hstack
+X_rating = hstack([X_text, sent_encoded])
 
-# X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(X_text, sent_encoded.ravel(), test_size=0.2, random_state=42)
-# sentiment_clf = LogisticRegression(max_iter=600, class_weight='balanced')
-# sentiment_clf.fit(X_train_s, y_train_s)
-# y_pred_sentiment = sentiment_clf.predict(X_test_s)
-# print("\n📊 Sentiment Classifier (Supervised)")
-# print("Accuracy:", accuracy_score(y_test_s, y_pred_sentiment))
-# print(classification_report(y_test_s, y_pred_sentiment, target_names=sent_le.classes_))
+
+# Rating Prediction
+
+y_rating = df['Score'] - 1  # Classes: 0–4
+X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(X_rating, y_rating, test_size=0.2, random_state=42)
+
+rating_clf = RandomForestClassifier(n_estimators=200, max_depth=25, class_weight='balanced', random_state=42)
+rating_clf.fit(X_train_r, y_train_r)
+y_pred_rating = rating_clf.predict(X_test_r)
+print("\n📊 Improved Rating Classifier (with Sentiment)")
+print("Accuracy:", accuracy_score(y_test_r, y_pred_rating))
+print(classification_report(y_test_r, y_pred_rating))
+
+# Sentiment Prediction (Supervised)
+
+X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(X_text, sent_encoded.ravel(), test_size=0.2, random_state=42)
+sentiment_clf = LogisticRegression(max_iter=600, class_weight='balanced')
+sentiment_clf.fit(X_train_s, y_train_s)
+y_pred_sentiment = sentiment_clf.predict(X_test_s)
+print("\n📊 Sentiment Classifier (Supervised)")
+print("Accuracy:", accuracy_score(y_test_s, y_pred_sentiment))
+print(classification_report(y_test_s, y_pred_sentiment, target_names=sent_le.classes_))
 
 
 # Topic Modeling with BERTopic
@@ -103,40 +103,41 @@ for topic_num in top_topics['Topic'].tolist()[1:6]:
     for word, score in topic_model.get_topic(topic_num):
         print(f"   {word}: {score:.4f}")
 
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
-# # ---------- Confusion Matrix for Rating ----------
-# cm_rating = confusion_matrix(y_test_r, y_pred_rating)
-# plt.figure(figsize=(6,5))
-# sns.heatmap(cm_rating, annot=True, fmt='d', cmap='Blues')
-# plt.title("📊 Confusion Matrix: Rating Classifier")
-# plt.xlabel("Predicted")
-# plt.ylabel("Actual")
-# plt.show()
+# ---------- Confusion Matrix for Rating ----------
+cm_rating = confusion_matrix(y_test_r, y_pred_rating)
+plt.figure(figsize=(6,5))
+sns.heatmap(cm_rating, annot=True, fmt='d', cmap='Blues')
+plt.title("📊 Confusion Matrix: Rating Classifier")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
 
-# # ---------- Confusion Matrix for Sentiment ----------
-# cm_sentiment = confusion_matrix(y_test_s, y_pred_sentiment)
-# plt.figure(figsize=(6,5))
-# sns.heatmap(cm_sentiment, annot=True, fmt='d', cmap='Greens',
-#             xticklabels=sent_le.classes_, yticklabels=sent_le.classes_)
-# plt.title("📊 Confusion Matrix: Sentiment Classifier")
-# plt.xlabel("Predicted")
-# plt.ylabel("Actual")
-# plt.show()
+# ---------- Confusion Matrix for Sentiment ----------
+cm_sentiment = confusion_matrix(y_test_s, y_pred_sentiment)
+plt.figure(figsize=(6,5))
+sns.heatmap(cm_sentiment, annot=True, fmt='d', cmap='Greens',
+            xticklabels=sent_le.classes_, yticklabels=sent_le.classes_)
+plt.title("📊 Confusion Matrix: Sentiment Classifier")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
 
-# # BERTopic interactive 2D topic clustering
-# print("\n📈 Generating topic cluster visualization...")
-# topic_model.visualize_topics().show()
+# BERTopic interactive 2D topic clustering
+print("\n📈 Generating topic cluster visualization...")
+topic_model.visualize_topics().show()
 
-# import joblib
+import joblib
 
-# # Save rating and sentiment classifiers
-# joblib.dump(rating_clf, "rating_model.pkl")
-# joblib.dump(sentiment_clf, "sentiment_model.pkl")
-# joblib.dump(tfidf, "tfidf_vectorizer.pkl")
-# joblib.dump(sent_le, "sentiment_label_encoder.pkl")
+# Save rating and sentiment classifiers
+joblib.dump(rating_clf, "rating_model.pkl")
+joblib.dump(sentiment_clf, "sentiment_model.pkl")
+joblib.dump(tfidf, "tfidf_vectorizer.pkl")
+joblib.dump(sent_le, "sentiment_label_encoder.pkl")
 
-# # Save BERTopic
-# topic_model.save("bertopic_model")
+# Save BERTopic
+topic_model.save("bertopic_model")
+
